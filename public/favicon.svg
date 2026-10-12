@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="CUI Attock">
+  <rect width="32" height="32" rx="7" fill="#1E4D3C"/>
+  <path fill="#EFEAE1" d="M7.2 22.4h17.6v2.4a.9.9 0 0 1-.9.9H8.1a.9.9 0 0 1-.9-.9v-2.4z"/>
+  <path fill="#EFEAE1" d="M8.1 22.6C8.4 14.4 11.5 9.4 16 9.4s7.6 5 7.9 13.2H8.1z"/>
+  <rect x="14.55" y="11.2" width="2.9" height="11.4" rx=".5" fill="#8D6A32"/>
+</svg>

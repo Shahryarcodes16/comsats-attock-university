@@ -1,0 +1,28 @@
+node_modules/
+.output/
+.vercel/
+dist/
+build/
+.nitro/
+.tanstack/
+.cache/
+
+# Grok / dev generated runtime files
+.grok/preview.pid
+.grok/preview.log
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS Files
+Thumbs.db
+[Dd]esktop.ini
+.DS_Store

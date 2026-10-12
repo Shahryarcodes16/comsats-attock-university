@@ -1,0 +1,36 @@
+{
+  "url": "http://127.0.0.1:8080/",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "CUI Attock Timetable",
+      "hasCanvas": false,
+      "bodyTextLen": 513,
+      "bodyTextHash": "e37567e77fdbc62ca761862241c83f018c8b1c6e01764c5f7145394ac1aeaf3e",
+      "bodyTextPrefix": "Skip to content COMSATS Attock Today Rooms Faculty Batches Find ",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-preview.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "CUI Attock Timetable",
+      "hasCanvas": false,
+      "bodyTextLen": 1168,
+      "bodyTextHash": "0584b31b235eed4707d5c539b0f072164dbe9fc687ca7de6691585b6b36c6dfa",
+      "bodyTextPrefix": "Skip to content ATTOCK CAMPUS Timetable Good afternoon. Saturday",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-preview-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/app-builder-preview.json"
+}
