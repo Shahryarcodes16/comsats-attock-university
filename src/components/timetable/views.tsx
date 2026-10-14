@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { Clock, Copy, Pin, Printer, Search } from "lucide-react";
+import { Clock, Copy, Pin, Printer, Search, Zap } from "lucide-react";
 import { DaySlotBar, Segment } from "@/components/timetable/chrome";
 import { ClassList } from "@/components/timetable/class-list";
 import { useDesk } from "@/components/timetable/context";
 import { WeekGrid } from "@/components/timetable/week-grid";
+import { RoomReportModal } from "@/components/timetable/room-report-modal";
+import type { RoomOverrideDTO } from "@/lib/rooms/rooms.server";
 import {
   ROOM_GROUPS,
   WEEK_CELLS,
@@ -177,10 +179,80 @@ export function TodayView() {
 export function RoomsView() {
   const { day, slot, open } = useDesk();
   const [query, setQuery] = useState("");
-  const [mode, setMode] = useState<"free" | "busy">("free");
+  const [mode, setMode] = useState<"free" | "busy" | "all">("all");
   const [group, setGroup] = useState<"All" | RoomGroup>("All");
   const [span, setSpan] = useState<1 | 2>(1);
   const effectiveSpan: 1 | 2 = slot === 4 ? 1 : span;
+
+  // Live crowdsourced overrides from DB
+  const [liveOverrides, setLiveOverrides] = useState<Record<string, RoomOverrideDTO>>({});
+  const [reportingRoomId, setReportingRoomId] = useState<string | null>(null);
+
+  // Fetch active statuses on load & slot change
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchLiveRoomStatuses() {
+      try {
+        const res = await fetch("/api/rooms/live");
+        const data = await res.json();
+        if (data.success && !cancelled) {
+          setLiveOverrides(data.overrides || {});
+        }
+      } catch (err) {
+        console.error("Could not load live overrides, falling back to static timetable.", err);
+      }
+    }
+    fetchLiveRoomStatuses();
+    const interval = window.setInterval(fetchLiveRoomStatuses, 30000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+  }, []);
+
+  function getSlotVoteKey(roomId: string, expiresAt: string) {
+    return `voted_${roomId}_${expiresAt}`;
+  }
+
+  function hasAlreadyVoted(roomId: string, expiresAt: string): boolean {
+    if (typeof window === "undefined") return false;
+    return Boolean(localStorage.getItem(getSlotVoteKey(roomId, expiresAt)));
+  }
+
+  function markAsVoted(roomId: string, expiresAt: string) {
+    if (typeof window === "undefined") return;
+    localStorage.setItem(getSlotVoteKey(roomId, expiresAt), "true");
+  }
+
+  async function verifyStatus(roomId: string) {
+    const override = liveOverrides[roomId];
+    if (!override || hasAlreadyVoted(roomId, override.expires_at)) return;
+
+    // Optimistically update the UI immediately
+    setLiveOverrides((prev) => ({
+      ...prev,
+      [roomId]: {
+        ...override,
+        verifications: override.verifications + 1,
+      },
+    }));
+    markAsVoted(roomId, override.expires_at);
+
+    try {
+      await fetch("/api/rooms/report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          room_id: roomId,
+          status: override.status,
+          slot_day: day,
+          slot_index: slot,
+        }),
+      });
+    } catch (err) {
+      console.error("Verification sync failed:", err);
+    }
+  }
 
   const occupied = useMemo(() => {
     const map = new Map<number, ReturnType<typeof at>>();
@@ -199,8 +271,17 @@ export function RoomsView() {
     .filter((room) => (group === "All" ? true : roomGroup(room.label) === group))
     .filter((room) => room.label.toLowerCase().includes(needle));
 
-  const free = matched.filter((room) => isFree(forRoom(room.id), day, slot, effectiveSpan));
-  const busy = matched.filter((room) => occupied.has(room.id));
+  const items = matched.filter((room) => {
+    const isOccupiedScheduled = occupied.has(room.id);
+    const override = liveOverrides[room.label];
+    const isCurrentlyFree = override
+      ? override.status === "FREE_EARLY"
+      : !isOccupiedScheduled && isFree(forRoom(room.id), day, slot, effectiveSpan);
+
+    if (mode === "free") return isCurrentlyFree;
+    if (mode === "busy") return !isCurrentlyFree;
+    return true;
+  });
 
   return (
     <div className="page">
@@ -219,7 +300,7 @@ export function RoomsView() {
         <input
           type="search"
           value={query}
-          placeholder="Search a room"
+          placeholder="Search a room (e.g. CR-01, LH-1, Lab)"
           onChange={(event) => setQuery(event.target.value)}
         />
       </label>
@@ -253,61 +334,103 @@ export function RoomsView() {
         ]}
       />
       <Segment
-        label="Free or busy"
+        label="Filter room state"
         value={mode}
-        onChange={(value) => setMode(value === "busy" ? "busy" : "free")}
+        onChange={(value) => setMode(value as "all" | "free" | "busy")}
         options={[
-          { value: "free", label: `Free ${free.length}` },
-          { value: "busy", label: `Busy ${busy.length}` },
+          { value: "all", label: `All ${matched.length}` },
+          { value: "free", label: "Free" },
+          { value: "busy", label: "Busy" },
         ]}
       />
-      {mode === "free" ? (
-        free.length === 0 ? (
-          <p className="quiet">No open room matches this filter.</p>
-        ) : (
-          ROOM_GROUPS.map((name) => {
-            const list = free.filter((room) => roomGroup(room.label) === name);
-            if (list.length === 0) return null;
+
+      {items.length === 0 ? (
+        <p className="quiet">No room matches this filter.</p>
+      ) : (
+        <div id="room-grid" className="room-grid">
+          {items.map((room) => {
+            const isOccupiedScheduled = occupied.has(room.id);
+            const override = liveOverrides[room.label];
+            const entries = occupied.get(room.id) ?? [];
+            const scheduledCourse = entries.length ? summarize(entries) : null;
+
+            let badgeText = isOccupiedScheduled ? "Occupied (Scheduled)" : "Free Slot";
+            let badgeColor: "green" | "amber" | "red" = isOccupiedScheduled ? "red" : "green";
+            let subtext = scheduledCourse || "No lecture scheduled this slot";
+
+            if (override) {
+              if (override.status === "FREE_EARLY") {
+                badgeText = "Freed Early";
+                badgeColor = "green";
+              } else if (override.status === "OCCUPIED_MAKEUP") {
+                badgeText = "Makeup Class";
+                badgeColor = "amber";
+              } else if (override.status === "SOCIETY_EVENT") {
+                badgeText = "Society Event";
+                badgeColor = "amber";
+              }
+
+              const sectionTag = override.reported_by_section ? `[${override.reported_by_section}] ` : "";
+              subtext = `${sectionTag}${override.note || "Reported live by students"}`;
+            }
+
+            const voted = override ? hasAlreadyVoted(room.label, override.expires_at) : false;
+
             return (
-              <section key={name}>
-                <h2 className="group-label">
-                  {name}
-                  <span>{list.length}</span>
-                </h2>
-                <div className="tile-grid">
-                  {list.map((room) => (
+              <div key={room.id} className="room-card">
+                <div>
+                  <div className="room-header">
                     <button
-                      key={room.id}
                       type="button"
-                      className="tile tap"
+                      className="room-title-btn"
                       onClick={() => open({ type: "room", id: room.id })}
+                      title="View full room timetable"
                     >
-                      <i className="dot" aria-hidden />
                       {room.label}
                     </button>
-                  ))}
+                    <span className={`status-badge ${badgeColor}`}>{badgeText}</span>
+                  </div>
+                  <p className="room-note">{subtext}</p>
                 </div>
-              </section>
+
+                <div className="card-actions">
+                  {override ? (
+                    <button
+                      type="button"
+                      className={`verify-btn ${voted ? "verified" : ""}`}
+                      onClick={() => verifyStatus(room.label)}
+                      disabled={voted}
+                    >
+                      {voted ? "✓ Confirmed" : "👍 Confirm"} ({override.verifications})
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    className="report-trigger-btn"
+                    onClick={() => setReportingRoomId(room.label)}
+                  >
+                    <Zap size={14} />
+                    Update Status
+                  </button>
+                </div>
+              </div>
             );
-          })
-        )
-      ) : busy.length === 0 ? (
-        <p className="quiet">No busy room matches this filter.</p>
-      ) : (
-        <div className="stack">
-          {busy.map((room) => (
-            <button
-              key={room.id}
-              type="button"
-              className="busy-row tap"
-              onClick={() => open({ type: "room", id: room.id })}
-            >
-              <b>{room.label}</b>
-              <span>{summarize(occupied.get(room.id) ?? [])}</span>
-            </button>
-          ))}
+          })}
         </div>
       )}
+
+      {reportingRoomId ? (
+        <RoomReportModal
+          roomId={reportingRoomId}
+          day={day}
+          slot={slot}
+          onClose={() => setReportingRoomId(null)}
+          onSuccess={(updated) => {
+            setLiveOverrides((prev) => ({ ...prev, [updated.room_id]: updated }));
+            markAsVoted(updated.room_id, updated.expires_at);
+          }}
+        />
+      ) : null}
     </div>
   );
 }

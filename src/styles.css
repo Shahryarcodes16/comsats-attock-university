@@ -1959,3 +1959,242 @@ a.btn {
 .panel-head .btn {
   white-space: nowrap;
 }
+
+/* ── Live Crowdsourced Rooms & Modal ─────────────────────────────────────── */
+
+:root {
+  --bg-card: var(--c-paper);
+  --text-main: var(--c-ink);
+  --text-muted: var(--c-muted);
+  --green-bg: rgba(16, 185, 129, 0.15);
+  --green-text: #10b981;
+  --amber-bg: rgba(245, 158, 11, 0.15);
+  --amber-text: #d97706;
+  --red-bg: rgba(239, 68, 68, 0.15);
+  --red-text: #ef4444;
+  --accent: var(--c-accent);
+}
+
+:root[data-theme="ink"] {
+  --green-text: #34d399;
+  --amber-text: #fbbf24;
+  --red-text: #f87171;
+}
+
+.room-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+  gap: 0.85rem;
+}
+
+.room-card {
+  background: var(--c-paper);
+  color: var(--c-ink);
+  border: 1px solid var(--c-line);
+  border-radius: var(--r-md);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.75rem;
+  transition: transform 180ms ease, border-color 180ms ease;
+}
+
+.room-card:hover {
+  border-color: color-mix(in srgb, var(--c-ink) 25%, var(--c-line));
+}
+
+.room-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.room-title-btn {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0;
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--c-ink);
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.room-title-btn:hover {
+  color: var(--c-accent);
+}
+
+/* Status Pill Badges */
+.status-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  line-height: 1.2;
+}
+.status-badge.green { background: var(--green-bg); color: var(--green-text); }
+.status-badge.amber { background: var(--amber-bg); color: var(--amber-text); }
+.status-badge.red   { background: var(--red-bg);   color: var(--red-text); }
+
+.room-note {
+  font-size: 0.85rem;
+  color: var(--c-muted);
+  margin: 0.4rem 0 0;
+  line-height: 1.4;
+}
+
+/* Card Footer Actions */
+.card-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+
+.verify-btn, .report-trigger-btn {
+  flex: 1;
+  padding: 0.45rem 0.6rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--c-line);
+  background: var(--c-canvas);
+  color: var(--c-ink);
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+.verify-btn {
+  background: color-mix(in srgb, var(--c-accent) 15%, transparent);
+  border-color: var(--c-accent);
+  color: var(--c-accent);
+}
+
+.verify-btn.verified {
+  background: color-mix(in srgb, var(--c-muted) 20%, transparent);
+  border-color: var(--c-line);
+  color: var(--c-muted);
+  cursor: default;
+}
+
+.report-trigger-btn:hover {
+  background: color-mix(in srgb, var(--c-ink) 8%, var(--c-paper));
+}
+
+/* Dialog Modal Backdrop & Styling */
+.status-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.status-modal {
+  background: var(--c-paper);
+  color: var(--c-ink);
+  border: 1px solid var(--c-line);
+  border-radius: var(--r-lg);
+  padding: 1.35rem;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: var(--shadow);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.modal-header h3 { margin: 0; font-size: 1.15rem; font-family: var(--f-serif); }
+.close-btn {
+  background: none;
+  border: none;
+  color: var(--c-muted);
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  border-radius: 6px;
+}
+.close-btn:hover { color: var(--c-ink); }
+.modal-subtitle { font-size: 0.8rem; color: var(--c-muted); margin: 0.4rem 0 1rem; }
+.room-report-error { font-size: 0.8rem; color: #ef4444; margin-bottom: 0.75rem; }
+
+/* Radio Option Cards */
+.status-options { display: flex; flex-direction: column; gap: 0.6rem; }
+.status-radio input { display: none; }
+.radio-card {
+  border: 1px solid var(--c-line);
+  background: var(--c-canvas);
+  border-radius: 10px;
+  padding: 0.75rem;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  transition: all 150ms ease;
+}
+.status-radio input:checked + .radio-card {
+  border-color: var(--c-accent);
+  background: color-mix(in srgb, var(--c-accent) 12%, var(--c-canvas));
+}
+.radio-title { font-weight: 600; font-size: 0.9rem; }
+.radio-desc { font-size: 0.75rem; color: var(--c-muted); }
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+.input-group input {
+  background: var(--c-canvas);
+  border: 1px solid var(--c-line);
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+  color: var(--c-ink);
+  font-size: 0.85rem;
+  outline: none;
+}
+.input-group input:focus {
+  border-color: var(--c-accent);
+}
+
+.submit-btn {
+  width: 100%;
+  padding: 0.75rem;
+  background: var(--c-accent);
+  color: var(--c-on-accent);
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  transition: opacity 150ms ease;
+}
+.submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+

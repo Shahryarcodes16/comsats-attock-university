@@ -13,6 +13,8 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AddCodeRouteImport } from './routes/add.$code'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as ApiRoomsLiveRouteImport } from './routes/api/rooms/live'
+import { Route as ApiRoomsReportRouteImport } from './routes/api/rooms/report'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -34,18 +36,32 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiRoomsLiveRoute = ApiRoomsLiveRouteImport.update({
+  id: '/api/rooms/live',
+  path: '/api/rooms/live',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiRoomsReportRoute = ApiRoomsReportRouteImport.update({
+  id: '/api/rooms/report',
+  path: '/api/rooms/report',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/add/$code': typeof AddCodeRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/rooms/live': typeof ApiRoomsLiveRoute
+  '/api/rooms/report': typeof ApiRoomsReportRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/add/$code': typeof AddCodeRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/rooms/live': typeof ApiRoomsLiveRoute
+  '/api/rooms/report': typeof ApiRoomsReportRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,13 +69,34 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/add/$code': typeof AddCodeRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/rooms/live': typeof ApiRoomsLiveRoute
+  '/api/rooms/report': typeof ApiRoomsReportRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/add/$code' | '/api/auth/$'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/add/$code'
+    | '/api/auth/$'
+    | '/api/rooms/live'
+    | '/api/rooms/report'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/add/$code' | '/api/auth/$'
-  id: '__root__' | '/' | '/login' | '/add/$code' | '/api/auth/$'
+  to:
+    | '/'
+    | '/login'
+    | '/add/$code'
+    | '/api/auth/$'
+    | '/api/rooms/live'
+    | '/api/rooms/report'
+  id:
+    | '__root__'
+    | '/'
+    | '/login'
+    | '/add/$code'
+    | '/api/auth/$'
+    | '/api/rooms/live'
+    | '/api/rooms/report'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -67,6 +104,8 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   AddCodeRoute: typeof AddCodeRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiRoomsLiveRoute: typeof ApiRoomsLiveRoute
+  ApiRoomsReportRoute: typeof ApiRoomsReportRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -99,6 +138,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/rooms/live': {
+      id: '/api/rooms/live'
+      path: '/api/rooms/live'
+      fullPath: '/api/rooms/live'
+      preLoaderRoute: typeof ApiRoomsLiveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/rooms/report': {
+      id: '/api/rooms/report'
+      path: '/api/rooms/report'
+      fullPath: '/api/rooms/report'
+      preLoaderRoute: typeof ApiRoomsReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -107,6 +160,8 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   AddCodeRoute: AddCodeRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiRoomsLiveRoute: ApiRoomsLiveRoute,
+  ApiRoomsReportRoute: ApiRoomsReportRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
